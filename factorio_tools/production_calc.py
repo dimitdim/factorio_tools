@@ -122,9 +122,9 @@ def print_results(raws, products, recipes):
     print(row_format.format("", "Yellow", "Red", "Blue"))
     for product, count in chain(raws.items(), products.items()):
         if product not in FLUIDS:
-            belts_y = count * 3 / 40
-            belts_r = count * 3 / 80
-            belts_b = count * 3 / 120
+            belts_y = count * 3 / 45
+            belts_r = count * 3 / 90
+            belts_b = count * 3 / 135
             total_belts_y += math.ceil(belts_y)
             total_belts_r += math.ceil(belts_r)
             total_belts_b += math.ceil(belts_b)

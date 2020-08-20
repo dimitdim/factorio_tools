@@ -66,13 +66,6 @@ def get_recipes(recipes_filename, stone_furnace):
     return recipes
 
 
-def get_input():
-    """Read user input"""
-    top_product = str(input("Product: ")).replace(" ", "")
-    top_count = float(input("Products Per Second: "))
-    return top_product, top_count
-
-
 def create_totals(product, count, recipes, products=None, raws=None):
     """Recursively calculate the Products and Raws"""
     if products is None:
@@ -147,6 +140,12 @@ def parse_args():
     """Parse arguments"""
     parser = argparse.ArgumentParser()
     parser.add_argument(
+        "top_product", nargs="?", default=None, help="Product to Calculate"
+    )
+    parser.add_argument(
+        "top_count", type=float, nargs="?", default=None, help="Number of Products a Second"
+    )
+    parser.add_argument(
         "--recipes", default="recipes.yml", help="Location of recipe catalog"
     )
     parser.add_argument(
@@ -158,9 +157,13 @@ def parse_args():
 def main():
     """Read user input, calculate results, and print"""
     args = parse_args()
+    if args.top_product is None:
+        args.top_product = str(input("Product: ")).replace(" ", "")
+    if args.top_count is None:
+        args.top_count = eval(input("Products Per Second: "))
+
     recipes = get_recipes(args.recipes, args.stone_furnace)
-    top_product, top_count = get_input()
-    products, raws = create_totals(top_product, top_count, recipes)
+    products, raws = create_totals(args.top_product, args.top_count, recipes)
     print_results(raws, products, recipes)
 
 

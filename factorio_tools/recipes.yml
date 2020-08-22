@@ -32,6 +32,22 @@ Rail:
   output: 2
 
 # Production
+CopperPlate:
+  ingredients: {CopperOre: 1}
+  time: 1.6
+  production: "Furnace"
+IronPlate:
+  ingredients: {IronOre: 1}
+  time: 1.6
+  production: "Furnace"
+StoneBrick:
+  ingredients: {Stone: 2}
+  time: 1.6
+  production: "Furnace"
+SteelPlate:
+  ingredients: {IronPlate: 5}
+  time: 8.0
+  production: "Furnace"
 Accumulator:
   ingredients: {Battery: 5, IronPlate: 2}
   time: 10
@@ -157,6 +173,32 @@ Explosives:
   time: 4
   output: 2
   production: "ChemicalPlant"
+Wood:
+  production: "Raw"
+Coal:
+  production: "Raw"
+Stone:
+  production: "Raw"
+IronOre:
+  production: "Raw"
+CopperOre:
+  production: "Raw"
+UraniumOre:
+  production: "Raw"
+RawFish:
+  production: "Raw"
+CrudeOil:
+  production: "Raw"
+HeavyOil:
+  production: "Raw"
+LightOil:
+  production: "Raw"
+PetroleumGas:
+  production: "Raw"
+Water:
+  production: "Raw"
+Steam:
+  production: "Raw"
 
 # Combat
 AtomicBomb:

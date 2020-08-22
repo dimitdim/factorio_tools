@@ -4,6 +4,7 @@
 ExpressTransportBelt:
   ingredients: {FastTransportBelt: 1, IronGearWheel: 10, Lubricant: 20}
   time: 0.5
+  production: "AssemblingMachine2"
 FastTransportBelt:
   ingredients: {IronGearWheel: 5, TransportBelt: 1}
   time: 0.5
@@ -66,6 +67,7 @@ AdvancedCircuit:
 Battery:
   ingredients: {CopperPlate: 1, IronPlate: 1, SulfuricAcid: 20}
   time: 4
+  production: "ChemicalPlant"
 CopperCable:
   ingredients: {CopperPlate: 1}
   time: 0.5
@@ -73,6 +75,7 @@ CopperCable:
 ElectricEngineUnit:
   ingredients: {ElectronicCircuit: 2, EngineUnit: 1, Lubricant: 15}
   time: 10
+  production: "AssemblingMachine2"
 ElectronicCircuit:
   ingredients: {CopperCable: 3, IronPlate: 1}
   time: 0.5
@@ -96,6 +99,7 @@ Lubricant:
   ingredients: {HeavyOil: 10}
   time: 1
   output: 10
+  production: "ChemicalPlant"
 MilitarySciencePack:
   ingredients: {Grenade: 1, PiercingRoundsMagazine: 1, Wall: 2}
   time: 10
@@ -104,9 +108,11 @@ PlasticBar:
   ingredients: {Coal: 1, PetroleumGas: 20}
   time: 1
   output: 2
+  production: "ChemicalPlant"
 ProcessingUnit:
   ingredients: {AdvancedCircuit: 2, ElectronicCircuit: 20, SulfuricAcid: 5}
   time: 10
+  production: "AssemblingMachine2"
 ProductionSciencePack:
   ingredients: {ElectricFurnace: 1, ProductivityModule: 1, Rail: 30}
   time: 21
@@ -114,9 +120,11 @@ ProductionSciencePack:
 RocketFuel:
   ingredients: {LightOil: 10, SolidFuel: 10}
   time: 30
+  production: "AssemblingMachine2"
 RocketPart:
   ingredients: {LowDensityStructure: 10, RocketControlUnit: 10, RocketFuel: 10}
   time: 3
+  production: "RocketSilo"
 Satellite:
   ingredients: {Accumulator: 100, LowDensityStructure: 100, ProcessingUnit: 100, Radar: 5,
     RocketFuel: 50, SolarPanel: 100}
@@ -135,6 +143,7 @@ Sulfur:
   ingredients: {PetroleumGas: 30, Water: 30}
   time: 1
   output: 2
+  production: "ChemicalPlant"
 SulfuricAcid:
   ingredients: {IronPlate: 1, Sulfur: 5, Water: 100}
   time: 1
@@ -147,6 +156,7 @@ Explosives:
   ingredients: {Coal: 1, Sulfur: 1, Water: 10}
   time: 4
   output: 2
+  production: "ChemicalPlant"
 
 # Combat
 AtomicBomb:

@@ -6,7 +6,7 @@ import argparse
 import math
 
 from pathlib import Path
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, Tuple, Optional
 from dataclasses import dataclass, field
 from collections import defaultdict
 
@@ -73,162 +73,124 @@ def create_totals(
     return products
 
 
-def print_section(
-    title: str,
-    header: Optional[Tuple[str, ...]],
-    content: List[Tuple[str, ...]],
-    totals: Tuple[int, ...],
-) -> None:
+@dataclass
+class ResultsSection:
+    """A section of printed results"""
+
+    title: str
+    header: Optional[Tuple[str, ...]] = None
+    products: Dict[str, Tuple[Optional[float], ...]] = field(default_factory=dict)
+
+
+def generate_sections(
+    products: Dict[str, int], recipes: Dict[str, Recipe]
+) -> Dict[str, ResultsSection]:
+    """Calculate the results"""
+    sections: Dict[str, ResultsSection] = {
+        "unknowns": ResultsSection("Unknowns"),
+        "raw_materials": ResultsSection("Raw Materials"),
+        "assembling_machines": ResultsSection("Assembling Machines", ("1", "2", "3")),
+        "chemical_plants": ResultsSection("Chemical Plants"),
+        "furnaces": ResultsSection("Furnaces", ("Stone", "Steel")),
+        "pipes": ResultsSection("Pipes"),
+        "belts": ResultsSection("Belts", ("Yellow", "Red", "Blue")),
+        "rocket_silos": ResultsSection("Rocket Silos"),
+    }
+
+    for product, count in products.items():
+        if product not in recipes.keys():
+            sections["unknowns"].products[product] = (count,)
+            continue
+
+        if recipes[product].production == "Raw":
+            sections["raw_materials"].products[product] = (count,)
+
+        elif recipes[product].production == "AssemblingMachine":
+            sections["assembling_machines"].products[product] = (
+                recipes[product].time * count / recipes[product].output / 1.25,
+                recipes[product].time * count / recipes[product].output / 0.75,
+                recipes[product].time * count / recipes[product].output / 0.50,
+            )
+        elif recipes[product].production == "AssemblingMachine2":
+            sections["assembling_machines"].products[product] = (
+                None,
+                recipes[product].time * count / recipes[product].output / 0.75,
+                recipes[product].time * count / recipes[product].output / 0.50,
+            )
+        elif recipes[product].production == "AssemblingMachine3":
+            sections["assembling_machines"].products[product] = (
+                None,
+                None,
+                recipes[product].time * count / recipes[product].output / 0.50,
+            )
+
+        elif recipes[product].production == "ChemicalPlant":
+            sections["chemical_plants"].products[product] = (
+                recipes[product].time * count / recipes[product].output,
+            )
+
+        elif recipes[product].production == "Furnace":
+            sections["furnaces"].products[product] = (
+                recipes[product].time * count / recipes[product].output / 0.50,
+                recipes[product].time * count / recipes[product].output,
+            )
+
+        elif recipes[product].production == "RocketSilo":
+            sections["rocket_silos"].products[product] = (
+                recipes[product].time * count / recipes[product].output,
+            )
+
+        else:
+            raise RuntimeError(f"Unknown production {recipes[product].production}")
+
+        if recipes[product].fluid:
+            sections["pipes"].products[product] = (count / 12000,)
+        else:
+            sections["belts"].products[product] = (
+                count * 3 / 45,
+                count * 3 / 90,
+                count * 3 / 135,
+            )
+    return sections
+
+
+def print_section(section: ResultsSection) -> None:
     """Print one section of the results"""
-    row_format = "{:<26}" + "{:<7}" * len(totals)
-    print(title)
-    underline = "=" * len(title)
-    if header is None:
+
+    num_columns_set = set(len(counts) for product, counts in section.products.items())
+    if len(num_columns_set) < 1:
+        return
+    if len(num_columns_set) > 1:
+        raise ValueError("Inconsistent Column Counts")
+    num_columns = num_columns_set.pop()
+
+    totals = [0] * num_columns
+    row_format = "{:<26}" + "{:<7}" * num_columns
+
+    print(section.title)
+    underline = "=" * len(section.title)
+    if section.header is None:
         print(underline)
     else:
-        print(row_format.format(underline, *header))
-    for line in content:
-        print(row_format.format(*line))
-    print(row_format.format("Total", *totals))
+        print(row_format.format(underline, *section.header))
+
+    for product, counts in sorted(
+        section.products.items(), key=lambda x: x[1][-1], reverse=True
+    ):
+        for idx, count in enumerate(counts):
+            if count is not None:
+                totals[idx] += math.ceil(count)
+        counts_str = ["" if count is None else str(round(count, 2)) for count in counts]
+        print(row_format.format(product, *counts_str))
+    print(row_format.format("", *totals))
     print()
 
 
 def print_results(products: Dict[str, int], recipes: Dict[str, Recipe]) -> None:
     """Calculate and print the results"""
-    print_sections: Dict[str, List] = {
-        "unknowns": [],
-        "raw_materials": [],
-        "assembling_machines": [],
-        "chemical_plants": [],
-        "furnaces": [],
-        "pipes": [],
-        "belts": [],
-    }
-
-    total_unknown = 0
-    total_raw = 0
-    total_assemblers_1 = 0
-    total_assemblers_2 = 0
-    total_assemblers_3 = 0
-    total_chemical_plants = 0
-    total_pipes = 0
-    total_belts_y = 0
-    total_belts_r = 0
-    total_belts_b = 0
-    total_stone_furnaces = 0
-    total_steel_furnaces = 0
-    for product, count in products.items():
-        if product not in recipes.keys():
-            print_sections["unknowns"].append((product, round(count, 2)))
-            total_unknown += math.ceil(count)
-            continue
-
-        if recipes[product].production in ["Raw"]:
-            print_sections["raw_materials"].append((product, round(count, 2)))
-            total_raw += math.ceil(count)
-        elif recipes[product].production in [
-            "AssemblingMachine",
-            "AssemblingMachine2",
-            "AssemblingMachine3",
-        ]:
-            assemblers_3: Optional[float]
-            assemblers_3 = (
-                recipes[product].time * count / recipes[product].output / 1.25
-            )
-            total_assemblers_3 += math.ceil(assemblers_3)
-            if recipes[product].production in [
-                "AssemblingMachine",
-                "AssemblingMachine2",
-            ]:
-                assemblers_2: Optional[float]
-                assemblers_2 = (
-                    recipes[product].time * count / recipes[product].output / 0.75
-                )
-                total_assemblers_2 += math.ceil(assemblers_2)
-                if recipes[product].production in ["AssemblingMachine"]:
-                    assemblers_1: Optional[float]
-                    assemblers_1 = (
-                        recipes[product].time * count / recipes[product].output / 0.50
-                    )
-                    total_assemblers_1 += math.ceil(assemblers_1)
-                else:
-                    assemblers_1 = None
-            else:
-                assemblers_1 = None
-                assemblers_2 = None
-            print_sections["assembling_machines"].append(
-                (
-                    product,
-                    "" if not assemblers_1 else str(round(assemblers_1, 2)),
-                    "" if not assemblers_2 else str(round(assemblers_2, 2)),
-                    "" if not assemblers_3 else str(round(assemblers_3, 2)),
-                )
-            )
-        elif recipes[product].production in ["ChemicalPlant"]:
-            chemical_plants = recipes[product].time * count / recipes[product].output
-            total_chemical_plants += math.ceil(chemical_plants)
-            print_sections["chemical_plants"].append(
-                (product, str(round(chemical_plants, 2)))
-            )
-        elif recipes[product].production in ["Furnace"]:
-            stone_furnaces = (
-                recipes[product].time * count / recipes[product].output / 0.50
-            )
-            total_stone_furnaces += math.ceil(stone_furnaces)
-            steel_furnaces = recipes[product].time * count / recipes[product].output
-            total_steel_furnaces += math.ceil(steel_furnaces)
-            print_sections["furnaces"].append(
-                (product, str(round(stone_furnaces, 2)), str(round(steel_furnaces, 2)))
-            )
-        else:
-            raise RuntimeError(f"Unknown production {recipes[product].production}")
-
-        if recipes[product].fluid:
-            pipes = count / 12000
-            total_pipes += math.ceil(pipes)
-            print_sections["pipes"].append((product, round(pipes, 2)))
-        else:
-            belts_y = count * 3 / 45
-            belts_r = count * 3 / 90
-            belts_b = count * 3 / 135
-            total_belts_y += math.ceil(belts_y)
-            total_belts_r += math.ceil(belts_r)
-            total_belts_b += math.ceil(belts_b)
-            print_sections["belts"].append(
-                (product, round(belts_y, 2), round(belts_r, 2), round(belts_b, 2))
-            )
-
-    for lst in print_sections.values():
-        lst.sort(key=lambda x: x[-1], reverse=True)
-    print_section("Unknowns", None, print_sections["unknowns"], (total_unknown,))
-    print_section("Raw Materials", None, print_sections["raw_materials"], (total_raw,))
-    print_section(
-        "Assembling Machines",
-        ("1", "2", "3"),
-        print_sections["assembling_machines"],
-        (total_assemblers_1, total_assemblers_2, total_assemblers_3,),
-    )
-    print_section(
-        "Chemical Plants",
-        None,
-        print_sections["chemical_plants"],
-        (total_chemical_plants,),
-    )
-    print_section(
-        "Furnaces",
-        ("Stone", "Steel"),
-        print_sections["furnaces"],
-        (total_stone_furnaces, total_steel_furnaces,),
-    )
-    print_section(
-        "Pipes", None, print_sections["pipes"], (total_pipes,),
-    )
-    print_section(
-        "Belts",
-        ("Yellow", "Red", "Blue"),
-        print_sections["belts"],
-        (total_belts_y, total_belts_r, total_belts_b,),
-    )
+    sections = generate_sections(products, recipes)
+    for section in sections.values():
+        print_section(section)
 
 
 def parse_args() -> argparse.Namespace:

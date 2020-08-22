@@ -116,6 +116,7 @@ Lubricant:
   time: 1
   output: 10
   production: "ChemicalPlant"
+  fluid: True
 MilitarySciencePack:
   ingredients: {Grenade: 1, PiercingRoundsMagazine: 1, Wall: 2}
   time: 10
@@ -164,6 +165,7 @@ SulfuricAcid:
   ingredients: {IronPlate: 1, Sulfur: 5, Water: 100}
   time: 1
   output: 50
+  fluid: True
 IronStick:
   ingredients: {IronPlate: 1}
   time: 0.5
@@ -189,16 +191,22 @@ RawFish:
   production: "Raw"
 CrudeOil:
   production: "Raw"
+  fluid: True
 HeavyOil:
   production: "Raw"
+  fluid: True
 LightOil:
   production: "Raw"
+  fluid: True
 PetroleumGas:
   production: "Raw"
+  fluid: True
 Water:
   production: "Raw"
+  fluid: True
 Steam:
   production: "Raw"
+  fluid: True
 
 # Combat
 AtomicBomb:

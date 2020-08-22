@@ -5,24 +5,14 @@
 import argparse
 import math
 
-from typing import Dict
+from pathlib import Path
+from typing import Dict, List, Tuple, Optional
 from dataclasses import dataclass, field
 from collections import defaultdict
 
 from ruamel.yaml import YAML
 
 yaml = YAML(typ="safe")  # pylint: disable=invalid-name
-
-FLUIDS = [
-    "CrudeOil",
-    "HeavyOil",
-    "LightOil",
-    "Lubricant",
-    "PetroleumGas",
-    "SulfuricAcid",
-    "Water",
-    "Steam",
-]
 
 
 @dataclass
@@ -33,9 +23,10 @@ class Recipe:
     time: int = 0
     output: int = 1
     production: str = "AssemblingMachine"
+    fluid: bool = False
 
 
-def get_recipes(recipes_filename):
+def get_recipes(recipes_filename: Path) -> Dict[str, Recipe]:
     """Read recipes file and overload furnace recipes and meta-recipes"""
     recipes = {}
     with open(recipes_filename, "r") as recipes_file:
@@ -59,7 +50,12 @@ def get_recipes(recipes_filename):
     return recipes
 
 
-def create_totals(product, count, recipes, products=None):
+def create_totals(
+    product: str,
+    count: float,
+    recipes: Dict[str, Recipe],
+    products: Dict[str, float] = None,
+) -> Dict[str, float]:
     """Recursively calculate the number of Products needed"""
     if products is None:
         products = defaultdict(int)
@@ -77,7 +73,12 @@ def create_totals(product, count, recipes, products=None):
     return products
 
 
-def print_section(title, header, content, totals):
+def print_section(
+    title: str,
+    header: Optional[Tuple[str, ...]],
+    content: List[Tuple[str, ...]],
+    totals: Tuple[int, ...],
+) -> None:
     """Print one section of the results"""
     row_format = "{:<26}" + "{:<7}" * len(totals)
     print(title)
@@ -92,14 +93,15 @@ def print_section(title, header, content, totals):
     print()
 
 
-def print_results(products, recipes):
+def print_results(products: Dict[str, int], recipes: Dict[str, Recipe]) -> None:
     """Calculate and print the results"""
-    print_sections = {
+    print_sections: Dict[str, List] = {
         "unknowns": [],
         "raw_materials": [],
         "assembling_machines": [],
         "chemical_plants": [],
         "furnaces": [],
+        "pipes": [],
         "belts": [],
     }
 
@@ -109,6 +111,7 @@ def print_results(products, recipes):
     total_assemblers_2 = 0
     total_assemblers_3 = 0
     total_chemical_plants = 0
+    total_pipes = 0
     total_belts_y = 0
     total_belts_r = 0
     total_belts_b = 0
@@ -118,7 +121,9 @@ def print_results(products, recipes):
         if product not in recipes.keys():
             print_sections["unknowns"].append((product, round(count, 2)))
             total_unknown += math.ceil(count)
-        elif recipes[product].production in ["Raw"]:
+            continue
+
+        if recipes[product].production in ["Raw"]:
             print_sections["raw_materials"].append((product, round(count, 2)))
             total_raw += math.ceil(count)
         elif recipes[product].production in [
@@ -126,6 +131,7 @@ def print_results(products, recipes):
             "AssemblingMachine2",
             "AssemblingMachine3",
         ]:
+            assemblers_3: Optional[float]
             assemblers_3 = (
                 recipes[product].time * count / recipes[product].output / 1.25
             )
@@ -134,11 +140,13 @@ def print_results(products, recipes):
                 "AssemblingMachine",
                 "AssemblingMachine2",
             ]:
+                assemblers_2: Optional[float]
                 assemblers_2 = (
                     recipes[product].time * count / recipes[product].output / 0.75
                 )
                 total_assemblers_2 += math.ceil(assemblers_2)
                 if recipes[product].production in ["AssemblingMachine"]:
+                    assemblers_1: Optional[float]
                     assemblers_1 = (
                         recipes[product].time * count / recipes[product].output / 0.50
                     )
@@ -175,7 +183,11 @@ def print_results(products, recipes):
         else:
             raise RuntimeError(f"Unknown production {recipes[product].production}")
 
-        if product not in FLUIDS:
+        if recipes[product].fluid:
+            pipes = count / 12000
+            total_pipes += math.ceil(pipes)
+            print_sections["pipes"].append((product, round(pipes, 2)))
+        else:
             belts_y = count * 3 / 45
             belts_r = count * 3 / 90
             belts_b = count * 3 / 135
@@ -209,6 +221,9 @@ def print_results(products, recipes):
         (total_stone_furnaces, total_steel_furnaces,),
     )
     print_section(
+        "Pipes", None, print_sections["pipes"], (total_pipes,),
+    )
+    print_section(
         "Belts",
         ("Yellow", "Red", "Blue"),
         print_sections["belts"],
@@ -216,7 +231,7 @@ def print_results(products, recipes):
     )
 
 
-def parse_args():
+def parse_args() -> argparse.Namespace:
     """Parse arguments"""
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -230,7 +245,7 @@ def parse_args():
         help="Number of Products a Second",
     )
     parser.add_argument(
-        "--recipes", default="recipes.yml", help="Location of recipe catalog"
+        "--recipes", type=Path, default="recipes.yml", help="Location of recipe catalog"
     )
     return parser.parse_args()
 

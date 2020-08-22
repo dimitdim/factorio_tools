@@ -1,43 +1,6 @@
-Accumulator:
-  ingredients: {Battery: 5, IronPlate: 2}
-  time: 10
-AdvancedCircuit:
-  ingredients: {CopperCable: 4, ElectronicCircuit: 2, PlasticBar: 2}
-  time: 6
-AssemblingMachine1:
-  ingredients: {ElectronicCircuit: 3, IronGearWheel: 5, IronPlate: 9}
-  time: 0.5
-AssemblingMachine2:
-  ingredients: {AssemblingMachine1: 1, ElectronicCircuit: 3, IronGearWheel: 5, SteelPlate: 2}
-  time: 0.5
-AssemblingMachine3:
-  ingredients: {AssemblingMachine2: 2, SpeedModule: 4}
-  time: 0.5
-AtomicBomb:
-  ingredients: {Explosives: 10, RocketControlUnit: 10, Uranium235: 30}
-  time: 50
-Battery:
-  ingredients: {CopperPlate: 1, IronPlate: 1, SulfuricAcid: 20}
-  time: 4
-CopperCable:
-  ingredients: {CopperPlate: 1}
-  time: 0.5
-  output: 2
-ElectricEngineUnit:
-  ingredients: {ElectronicCircuit: 2, EngineUnit: 1, Lubricant: 15}
-  time: 10
-ElectricFurnace:
-  ingredients: {AdvancedCircuit: 5, SteelPlate: 10, StoneBrick: 10}
-  time: 5
-ElectricMiningDrill:
-  ingredients: {ElectronicCircuit: 3, IronGearWheel: 5, IronPlate: 10}
-  time: 2
-ElectronicCircuit:
-  ingredients: {CopperCable: 3, IronPlate: 1}
-  time: 0.5
-EngineUnit:
-  ingredients: {IronGearWheel: 1, Pipe: 2, SteelPlate: 1}
-  time: 10
+# version: 1.0.0
+
+# Logistics
 ExpressTransportBelt:
   ingredients: {FastTransportBelt: 1, IronGearWheel: 10, Lubricant: 20}
   time: 0.5
@@ -48,15 +11,74 @@ FastUndergroundBelt:
   ingredients: {IronGearWheel: 40, UndergroundBelt: 2}
   time: 2
   output: 2
-FirearmMagazine:
-  ingredients: {IronPlate: 4}
+Inserter:
+  ingredients: {ElectronicCircuit: 1, IronGearWheel: 1, IronPlate: 1}
+  time: 0.5
+Pipe:
+  ingredients: {IronPlate: 1}
+  time: 0.5
+TransportBelt:
+  ingredients: {IronGearWheel: 1, IronPlate: 1}
+  time: 0.5
+  output: 2
+UndergroundBelt:
+  ingredients: {IronPlate: 10, TransportBelt: 5}
   time: 1
-Grenade:
-  ingredients: {Coal: 10, IronPlate: 5}
-  time: 8
-GunTurret:
-  ingredients: {CopperPlate: 10, IronGearWheel: 10, IronPlate: 20}
-  time: 8
+  output: 2
+Rail:
+  ingredients: {IronStick: 1, SteelPlate: 1, Stone: 1}
+  time: 0.5
+  output: 2
+
+# Production
+Accumulator:
+  ingredients: {Battery: 5, IronPlate: 2}
+  time: 10
+AssemblingMachine1:
+  ingredients: {ElectronicCircuit: 3, IronGearWheel: 5, IronPlate: 9}
+  time: 0.5
+AssemblingMachine2:
+  ingredients: {AssemblingMachine1: 1, ElectronicCircuit: 3, IronGearWheel: 5, SteelPlate: 2}
+  time: 0.5
+AssemblingMachine3:
+  ingredients: {AssemblingMachine2: 2, SpeedModule: 4}
+  time: 0.5
+ElectricFurnace:
+  ingredients: {AdvancedCircuit: 5, SteelPlate: 10, StoneBrick: 10}
+  time: 5
+ElectricMiningDrill:
+  ingredients: {ElectronicCircuit: 3, IronGearWheel: 5, IronPlate: 10}
+  time: 2
+SolarPanel:
+  ingredients: {CopperPlate: 5, ElectronicCircuit: 15, SteelPlate: 5}
+  time: 10
+SpeedModule:
+  ingredients: {AdvancedCircuit: 5, ElectronicCircuit: 5}
+  time: 15
+ProductivityModule:
+  ingredients: {AdvancedCircuit: 5, ElectronicCircuit: 5}
+  time: 15
+
+# Intermediate
+AdvancedCircuit:
+  ingredients: {CopperCable: 4, ElectronicCircuit: 2, PlasticBar: 2}
+  time: 6
+Battery:
+  ingredients: {CopperPlate: 1, IronPlate: 1, SulfuricAcid: 20}
+  time: 4
+CopperCable:
+  ingredients: {CopperPlate: 1}
+  time: 0.5
+  output: 2
+ElectricEngineUnit:
+  ingredients: {ElectronicCircuit: 2, EngineUnit: 1, Lubricant: 15}
+  time: 10
+ElectronicCircuit:
+  ingredients: {CopperCable: 3, IronPlate: 1}
+  time: 0.5
+EngineUnit:
+  ingredients: {IronGearWheel: 1, Pipe: 2, SteelPlate: 1}
+  time: 10
 UtilitySciencePack:
   ingredients: {FlyingRobotFrame: 1, LowDensityStructure: 3, ProcessingUnit: 2}
   time: 21
@@ -64,9 +86,6 @@ UtilitySciencePack:
 FlyingRobotFrame:
   ingredients: {Battery: 2, ElectricEngineUnit: 1, ElectronicCircuit: 3, SteelPlate: 1}
   time: 20
-Inserter:
-  ingredients: {ElectronicCircuit: 1, IronGearWheel: 1, IronPlate: 1}
-  time: 0.5
 IronGearWheel:
   ingredients: {IronPlate: 2}
   time: 0.5
@@ -81,12 +100,6 @@ MilitarySciencePack:
   ingredients: {Grenade: 1, PiercingRoundsMagazine: 1, Wall: 2}
   time: 10
   output: 2
-PiercingRoundsMagazine:
-  ingredients: {CopperPlate: 5, FirearmMagazine: 1, SteelPlate: 1}
-  time: 3
-Pipe:
-  ingredients: {IronPlate: 1}
-  time: 0.5
 PlasticBar:
   ingredients: {Coal: 1, PetroleumGas: 20}
   time: 1
@@ -98,12 +111,6 @@ ProductionSciencePack:
   ingredients: {ElectricFurnace: 1, ProductivityModule: 1, Rail: 30}
   time: 21
   output: 3
-Radar:
-  ingredients: {ElectronicCircuit: 5, IronGearWheel: 5, IronPlate: 10}
-  time: 0.5
-RocketControlUnit:
-  ingredients: {ProcessingUnit: 1, SpeedModule: 1}
-  time: 30
 RocketFuel:
   ingredients: {LightOil: 10, SolidFuel: 10}
   time: 30
@@ -124,12 +131,6 @@ ChemicalSciencePack:
   ingredients: {AdvancedCircuit: 3, EngineUnit: 2, Sulfur: 1}
   time: 24
   output: 2
-SolarPanel:
-  ingredients: {CopperPlate: 5, ElectronicCircuit: 15, SteelPlate: 5}
-  time: 10
-SpeedModule:
-  ingredients: {AdvancedCircuit: 5, ElectronicCircuit: 5}
-  time: 15
 Sulfur:
   ingredients: {PetroleumGas: 30, Water: 30}
   time: 1
@@ -138,25 +139,37 @@ SulfuricAcid:
   ingredients: {IronPlate: 1, Sulfur: 5, Water: 100}
   time: 1
   output: 50
-TransportBelt:
-  ingredients: {IronGearWheel: 1, IronPlate: 1}
-  time: 0.5
-  output: 2
-UndergroundBelt:
-  ingredients: {IronPlate: 10, TransportBelt: 5}
-  time: 1
-  output: 2
-Wall:
-  ingredients: {StoneBrick: 5}
-  time: 0.5
-Rail:
-  ingredients: {IronStick: 1, SteelPlate: 1, Stone: 1}
-  time: 0.5
-  output: 2
-ProductivityModule:
-  ingredients: {AdvancedCircuit: 5, ElectronicCircuit: 5}
-  time: 15
 IronStick:
   ingredients: {IronPlate: 1}
   time: 0.5
   output: 2
+Explosives:
+  ingredients: {Coal: 1, Sulfur: 1, Water: 10}
+  time: 4
+  output: 2
+
+# Combat
+AtomicBomb:
+  ingredients: {Explosives: 10, RocketControlUnit: 10, Uranium235: 30}
+  time: 50
+FirearmMagazine:
+  ingredients: {IronPlate: 4}
+  time: 1
+Grenade:
+  ingredients: {Coal: 10, IronPlate: 5}
+  time: 8
+GunTurret:
+  ingredients: {CopperPlate: 10, IronGearWheel: 10, IronPlate: 20}
+  time: 8
+PiercingRoundsMagazine:
+  ingredients: {CopperPlate: 5, FirearmMagazine: 1, SteelPlate: 1}
+  time: 3
+Radar:
+  ingredients: {ElectronicCircuit: 5, IronGearWheel: 5, IronPlate: 10}
+  time: 0.5
+RocketControlUnit:
+  ingredients: {ProcessingUnit: 1, SpeedModule: 1}
+  time: 30
+Wall:
+  ingredients: {StoneBrick: 5}
+  time: 0.5

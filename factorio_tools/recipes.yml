@@ -193,13 +193,13 @@ CrudeOil:
   production: "Raw"
   fluid: True
 HeavyOil:
-  production: "Raw"
+  production: "OilProcessing"
   fluid: True
 LightOil:
-  production: "Raw"
+  production: "OilProcessing"
   fluid: True
 PetroleumGas:
-  production: "Raw"
+  production: "OilProcessing"
   fluid: True
 Water:
   production: "Raw"
@@ -207,6 +207,48 @@ Water:
 Steam:
   production: "Raw"
   fluid: True
+SolidFuel:
+  production: "OilProcessing"
+BasicOilProcessing:
+  ingredients: {CrudeOil: 100}
+  time: 5
+  production: "OilRefinery"
+  breakdown: {PetroleumGas: 45}
+AdvancedOilProcessing:
+  ingredients: {CrudeOil: 100, Water: 50}
+  time: 5
+  production: "OilRefinery"
+  breakdown: {HeavyOil: 25, LightOil: 45, PetroleumGas: 55}
+HeavyOilCracking:
+  ingredients: {HeavyOil: 40, Water: 30}
+  time: 2
+  production: "ChemicalPlant"
+  breakdown: {LightOil: 30}
+LightOilCracking:
+  ingredients: {LightOil: 30, Water: 30}
+  time: 2
+  production: "ChemicalPlant"
+  breakdown: {PetroleumGas: 20}
+CoalLiquefaction:
+  ingredients: {Coal: 10, HeavyOil: 25, Steam: 50}
+  time: 5
+  production: "OilRefinery"
+  breakdown: {HeavyOil: 90, LightOil: 20, PetroleumGas: 10}
+HeavyOil2SolidFuel:
+  ingredients: {HeavyOil: 20}
+  time: 2
+  production: "ChemicalPlant"
+  breakdown: {SolidFuel: 1}
+LightOil2SolidFuel:
+  ingredients: {LightOil: 10}
+  time: 2
+  production: "ChemicalPlant"
+  breakdown: {SolidFuel: 1}
+PetroleumGas2SolidFuel:
+  ingredients: {PetroleumGas: 20}
+  time: 2
+  production: "ChemicalPlant"
+  breakdown: {SolidFuel: 1}
 
 # Combat
 AtomicBomb:

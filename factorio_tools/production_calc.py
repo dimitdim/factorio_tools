@@ -6,13 +6,26 @@ import argparse
 import math
 
 from pathlib import Path
-from typing import Dict, Tuple, Optional
+from typing import Dict, Tuple, Optional, List
 from dataclasses import dataclass, field
 from collections import defaultdict
 
+import numpy.linalg as linalg
 from ruamel.yaml import YAML
 
 yaml = YAML(typ="safe")  # pylint: disable=invalid-name
+
+
+OIL_PROCESSING_RECIPES = [
+    "BasicOilProcessing",
+    "AdvancedOilProcessing",
+    "HeavyOilCracking",
+    "LightOilCracking",
+    # "CoalLiquefaction",
+    "HeavyOil2SolidFuel",
+    "LightOil2SolidFuel",
+    "PetroleumGas2SolidFuel",
+]
 
 
 @dataclass
@@ -24,6 +37,7 @@ class Recipe:
     output: int = 1
     production: str = "AssemblingMachine"
     fluid: bool = False
+    breakdown: Optional[Dict[str, int]] = None
 
 
 def get_recipes(recipes_filename: Path) -> Dict[str, Recipe]:
@@ -73,6 +87,69 @@ def create_totals(
     return products
 
 
+def create_oil_matrices(
+    recipes: Dict[str, Recipe], available: List[str], oil_products: List[str]
+):
+    oil_matrices = []
+    for mask in range(2 ** len(available)):
+        partial_list = [
+            available[idx] for idx in range(len(available)) if (mask // (2 ** idx)) % 2
+        ]
+        if len(partial_list) != len(oil_products):
+            continue
+        recipe_matrix = []
+        for product in oil_products:
+            recipe_row = []
+            for recipe_name in partial_list:
+                recipe = recipes[recipe_name]
+                element = 0
+                if product in recipe.ingredients:
+                    element -= recipe.ingredients[product]
+                if product in recipe.breakdown:
+                    element += recipe.breakdown[product]
+                recipe_row.append(element)
+            recipe_matrix.append(recipe_row)
+        try:
+            oil_matrices.append((partial_list, linalg.inv(recipe_matrix)))
+        except linalg.LinAlgError:
+            pass
+    return oil_matrices
+
+
+def process_oil(
+    products: Dict[str, float], recipes: Dict[str, Recipe]
+) -> Dict[str, float]:
+    """Cacluate needed recipes and raw materials for oil processing"""
+    output = []
+    oil_products = []
+    for product in [
+        product
+        for product, details in recipes.items()
+        if details.production == "OilProcessing"
+    ]:
+        oil_products.append(product)
+        if product in products:
+            output.append(products[product])
+        else:
+            output.append(0)
+    oil_matrices = create_oil_matrices(recipes, OIL_PROCESSING_RECIPES, oil_products)
+
+    possible = []
+    for recipe_list, oil_matrix in oil_matrices:
+        recipe_counts = oil_matrix.dot(output)
+        if min(recipe_counts) >= 0:
+            rank = 0
+            if "BasicOilProcessing" in recipe_list:
+                rank += recipe_counts[recipe_list.index("BasicOilProcessing")]
+            if "AdvancedOilProcessing" in recipe_list:
+                rank += recipe_counts[recipe_list.index("AdvancedOilProcessing")]
+            possible.append((rank, zip(recipe_list, recipe_counts)))
+    for product, count in sorted(possible, key=lambda x: x[0])[0][1]:
+        if count != 0:
+            products = create_totals(product, count, recipes, products)
+    return products
+
+
 @dataclass
 class ResultsSection:
     """A section of printed results"""
@@ -91,6 +168,7 @@ def generate_sections(
         "raw_materials": ResultsSection("Raw Materials"),
         "assembling_machines": ResultsSection("Assembling Machines", ("1", "2", "3")),
         "chemical_plants": ResultsSection("Chemical Plants"),
+        "oil_refineries": ResultsSection("Oil Refineries"),
         "furnaces": ResultsSection("Furnaces", ("Stone", "Steel")),
         "pipes": ResultsSection("Pipes"),
         "belts": ResultsSection("Belts", ("Yellow", "Red", "Blue")),
@@ -135,15 +213,25 @@ def generate_sections(
                 recipes[product].time * count / recipes[product].output,
             )
 
+        elif recipes[product].production == "OilRefinery":
+            sections["oil_refineries"].products[product] = (
+                recipes[product].time * count / recipes[product].output,
+            )
+
         elif recipes[product].production == "RocketSilo":
             sections["rocket_silos"].products[product] = (
                 recipes[product].time * count / recipes[product].output,
             )
 
+        elif recipes[product].production == "OilProcessing":
+            pass
+
         else:
             raise RuntimeError(f"Unknown production {recipes[product].production}")
 
-        if recipes[product].fluid:
+        if recipes[product].breakdown is not None:
+            pass
+        elif recipes[product].fluid:
             sections["pipes"].products[product] = (count / 12000,)
         else:
             sections["belts"].products[product] = (
@@ -222,6 +310,7 @@ def main():
 
     recipes = get_recipes(args.recipes)
     products = create_totals(args.top_product, args.top_count, recipes)
+    products = process_oil(products, recipes)
     print_results(products, recipes)
 
 

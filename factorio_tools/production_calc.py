@@ -10,7 +10,7 @@ from typing import Dict, Tuple, Optional, List
 from dataclasses import dataclass, field
 from collections import defaultdict
 
-import numpy.linalg as linalg
+import numpy
 from ruamel.yaml import YAML
 
 yaml = YAML(typ="safe")  # pylint: disable=invalid-name
@@ -87,66 +87,94 @@ def create_totals(
     return products
 
 
-def create_oil_matrices(
-    recipes: Dict[str, Recipe], available: List[str], oil_products: List[str]
-):
-    oil_matrices = []
-    for mask in range(2 ** len(available)):
-        partial_list = [
-            available[idx] for idx in range(len(available)) if (mask // (2 ** idx)) % 2
-        ]
-        if len(partial_list) != len(oil_products):
-            continue
-        recipe_matrix = []
-        for product in oil_products:
-            recipe_row = []
-            for recipe_name in partial_list:
-                recipe = recipes[recipe_name]
+def create_recipe_matrices(
+    available_recipes: Dict[str, Recipe], output_products: List[str]
+) -> List[Tuple[List[str], numpy.ndarray]]:
+    """List all invertible recipe vs product matrices"""
+
+    recipe_matrices = []
+    for mask in range(2 ** len(available_recipes)):
+        partial_recipe_list = {
+            recipe_name: recipe
+            for idx, (recipe_name, recipe) in enumerate(available_recipes.items())
+            if (mask // (2 ** idx)) % 2
+        }
+        if len(partial_recipe_list) != len(output_products):
+            continue  # Ignore non-square matrices
+
+        inv_recipe_matrix = []
+        for output_product in output_products:
+            inv_recipe_row = []
+            for recipe in partial_recipe_list.values():
+                if recipe.breakdown is None:
+                    raise ValueError("Not a valid Oil Processing recipe")
                 element = 0
-                if product in recipe.ingredients:
-                    element -= recipe.ingredients[product]
-                if product in recipe.breakdown:
-                    element += recipe.breakdown[product]
-                recipe_row.append(element)
-            recipe_matrix.append(recipe_row)
+                if output_product in recipe.ingredients:
+                    element -= recipe.ingredients[output_product]
+                if output_product in recipe.breakdown:
+                    element += recipe.breakdown[output_product]
+                inv_recipe_row.append(element)
+            inv_recipe_matrix.append(inv_recipe_row)
+
         try:
-            oil_matrices.append((partial_list, linalg.inv(recipe_matrix)))
-        except linalg.LinAlgError:
-            pass
-    return oil_matrices
+            recipe_matrices.append(
+                (list(partial_recipe_list.keys()), numpy.linalg.inv(inv_recipe_matrix))
+            )
+        except numpy.linalg.LinAlgError:
+            pass  # Ignore singular matrices
+
+    return recipe_matrices
+
+
+def rank_recipe_combo(recipe_counts: Dict[str, float]) -> float:
+    """Rank recipe combo (0 is best)"""
+    rank = 0.0
+    if "BasicOilProcessing" in recipe_counts:
+        rank += recipe_counts["BasicOilProcessing"]
+    if "AdvancedOilProcessing" in recipe_counts:
+        rank += recipe_counts["AdvancedOilProcessing"]
+    return rank
 
 
 def process_oil(
     products: Dict[str, float], recipes: Dict[str, Recipe]
 ) -> Dict[str, float]:
-    """Cacluate needed recipes and raw materials for oil processing"""
-    output = []
-    oil_products = []
-    for product in [
-        product
-        for product, details in recipes.items()
-        if details.production == "OilProcessing"
-    ]:
-        oil_products.append(product)
-        if product in products:
-            output.append(products[product])
-        else:
-            output.append(0)
-    oil_matrices = create_oil_matrices(recipes, OIL_PROCESSING_RECIPES, oil_products)
+    """Calculate best oil processing recipe combination"""
 
-    possible = []
-    for recipe_list, oil_matrix in oil_matrices:
-        recipe_counts = oil_matrix.dot(output)
-        if min(recipe_counts) >= 0:
-            rank = 0
-            if "BasicOilProcessing" in recipe_list:
-                rank += recipe_counts[recipe_list.index("BasicOilProcessing")]
-            if "AdvancedOilProcessing" in recipe_list:
-                rank += recipe_counts[recipe_list.index("AdvancedOilProcessing")]
-            possible.append((rank, zip(recipe_list, recipe_counts)))
-    for product, count in sorted(possible, key=lambda x: x[0])[0][1]:
+    output_products = []
+    output_counts = []
+    for recipe_name, recipe in recipes.items():
+        if recipe.production != "OilProcessing":
+            continue
+        output_products.append(recipe_name)
+        if recipe_name in products:
+            output_counts.append(products[recipe_name])
+        else:
+            output_counts.append(0)
+
+    available_recipes = {
+        recipe_name: recipe
+        for recipe_name, recipe in recipes.items()
+        if recipe_name in OIL_PROCESSING_RECIPES
+    }
+    recipe_matrices = create_recipe_matrices(available_recipes, output_products)
+
+    best_recipe_combo = None
+    best_rank = None
+    for recipe_list, recipe_matrix in recipe_matrices:
+        recipe_counts = dict(zip(recipe_list, recipe_matrix.dot(output_counts)))
+        if min(recipe_counts.values()) >= 0:
+            rank = rank_recipe_combo(recipe_counts)
+            if best_rank is None or rank < best_rank:
+                best_recipe_combo = recipe_counts
+                best_rank = rank
+    if best_recipe_combo is None:
+        raise RuntimeError("No valid recipe combination found!")
+
+    for product, count in best_recipe_combo.items():
         if count != 0:
             products = create_totals(product, count, recipes, products)
+
     return products
 
 
@@ -207,14 +235,14 @@ def generate_sections(
                 recipes[product].time * count / recipes[product].output,
             )
 
-        elif recipes[product].production == "Furnace":
-            sections["furnaces"].products[product] = (
-                recipes[product].time * count / recipes[product].output / 0.50,
+        elif recipes[product].production == "OilRefinery":
+            sections["oil_refineries"].products[product] = (
                 recipes[product].time * count / recipes[product].output,
             )
 
-        elif recipes[product].production == "OilRefinery":
-            sections["oil_refineries"].products[product] = (
+        elif recipes[product].production == "Furnace":
+            sections["furnaces"].products[product] = (
+                recipes[product].time * count / recipes[product].output / 0.50,
                 recipes[product].time * count / recipes[product].output,
             )
 
@@ -224,13 +252,13 @@ def generate_sections(
             )
 
         elif recipes[product].production == "OilProcessing":
-            pass
+            pass  # Expressed as recipes instead
 
         else:
             raise RuntimeError(f"Unknown production {recipes[product].production}")
 
         if recipes[product].breakdown is not None:
-            pass
+            pass  # Expressed as individual products instead
         elif recipes[product].fluid:
             sections["pipes"].products[product] = (count / 12000,)
         else:

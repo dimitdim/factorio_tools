@@ -4,6 +4,7 @@
 
 import argparse
 import math
+import csv
 
 from pathlib import Path
 from typing import Dict, Tuple, Optional, List
@@ -302,11 +303,38 @@ def print_section(section: ResultsSection) -> None:
     print()
 
 
-def print_results(products: Dict[str, int], recipes: Dict[str, Recipe]) -> None:
+def write_section(section: ResultsSection, base_csvfilename: Path) -> None:
+    """Write one section of the results to a csv"""
+    csvfilename = (
+        base_csvfilename.stem
+        + "_"
+        + section.title.lower().replace(" ", "_")
+        + base_csvfilename.suffix
+    )
+    with open(csvfilename, "w", newline="") as csvfile:
+        csvwriter = csv.writer(csvfile)
+        if section.header is None:
+            csvwriter.writerow([section.title])
+        else:
+            csvwriter.writerow([section.title] + list(section.header))
+        for product, counts in sorted(
+            section.products.items(), key=lambda x: x[1][-1], reverse=True
+        ):
+            counts_str = ["" if count is None else str(count) for count in counts]
+            csvwriter.writerow([product] + counts_str)
+
+
+def print_results(
+    products: Dict[str, int],
+    recipes: Dict[str, Recipe],
+    base_csvfilename: Optional[Path] = None,
+) -> None:
     """Calculate and print the results"""
     sections = generate_sections(products, recipes)
     for section in sections.values():
         print_section(section)
+        if base_csvfilename is not None:
+            write_section(section, base_csvfilename)
 
 
 def parse_args() -> argparse.Namespace:
@@ -325,6 +353,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--recipes", type=Path, default="recipes.yml", help="Location of recipe catalog"
     )
+    parser.add_argument("--csv", type=Path, default=None, help="Write results to csv")
     return parser.parse_args()
 
 
@@ -339,7 +368,7 @@ def main():
     recipes = get_recipes(args.recipes)
     products = create_totals(args.top_product, args.top_count, recipes)
     products = process_oil(products, recipes)
-    print_results(products, recipes)
+    print_results(products, recipes, args.csv)
 
 
 if __name__ == "__main__":
